@@ -1,0 +1,34 @@
+#About Zijingzhisheng#
+
+way to deployment:
+
+    cd into the dir
+    run in terminal:
+        sudo npm install
+        nmp start
+    use your nginx to listen 80 and forward it to 4600 port
+	bin/www:7 please remove "\"0.0.0.0\", " for more safety
+
+file struct:
+
+    bin:            used to setup the server.
+    node_modules:   essential decpendency accesories.
+    public:         static folders.
+    routes:         used for floor-1 routers.
+    views:          http templates.
+    webentity:      website generator.
+    weixin_basic:   wechat basic accessories. (API, etc.)
+    weixin_handler: the handler for wechat official server.
+    models:         the interface of databases
+
+what to modify?
+
+    To modify host ip & open auto_refresh menu:      address_configure.js
+    To modify databases:    models/models.js
+    To modify weixin appid & token & appsecret:  weixin_basic/settings.js
+    #REMEMBER TO ENSURE INDEX IN MONGODB:
+        ensure ticket with index: stu_id & activity
+        ensure student with index: weixin_id
+        ensure seat with index: activity
+
+    #For TICKET, ensure that activity is also an index.
