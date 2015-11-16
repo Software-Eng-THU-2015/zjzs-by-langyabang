@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <!--<meta name="HandheldFriendly" content="True">-->
+    <meta name="MobileOptimized" content="320">
+    <meta content="telephone=no" name="format-detection">
+    <meta name="viewport" content="width=device-width, maximum-scale=1, initial-scale=1, user-scalable=no">
+    <title></title>
+
+    <style type="text/css">
+        body{
+            font-size: 15px;
+        }
+        .ProgressBar {
+            position: relative;
+            width: 200px;    /* 宽度 */
+            border: 1px solid #B1D632;
+            padding: 1px;
+        }
+        .ProgressBar div {
+            display: block;
+            position: relative;
+            background: #B1D632;
+            color: #333333;
+            height: 10px; /* 高度 */
+            line-height: 10px;  /* 文本居中 */
+        }
+        .ProgressBar div span {
+            position: absolute;
+            width: 200px; /* 宽度 */
+            width:k%;
+            text-align: center;
+            font-weight: bold;
+        }
+    </style>
+    <!--<link rel="stylesheet" href="css/style.min.css">-->
+    <!--<link type="text/css" href="css/style_zbw.css" rel="stylesheet">-->
+    <script src="/javascripts/jquery-1.10.2.min.js"></script>
+    <script src="/javascripts/jquery.form.min.js"></script>
+    <script type="text/javascript">
+        window.onerror = function() {
+            return true;
+        }
+    </script>
+
+</head>
+
+<body>
+    <h1 id="vote_activity_title"></h1>
+    <div id = "vote_acitivity_content"></div>
+    <div id ="vote_activity_questions">
+        <form id="vote_submit_form" action="" method="post" role="form">
+            <div id = "vote_all_questions" style="display:block">
+            </div>
+            <div id = "result_all_questions" style="display:none">
+            </div>
+            <input id="votenow" type="submit" value="提交">
+            <div id="error_msg"style="display: none">你有题目未选或选项数超过限制</div>
+        </form>
+    </div>
+
+    <script type="text/javascript">
+        var activity_time_raw=<%= act_start %>;//活动时间(毫秒)
+        var activity_end_time_raw=<%= act_end %>;
+        var time_server=new Date(<%= current_time %>);//服务器当前时间
+        var vote_select = [], data;
+        var activity_page_title="<%= act_name %>-活动详情";//页面标题名称
+        var activity_title="<%= act_name %>";//活动名称
+        var activity_detail_title="活动介绍";//可以填"演出详情"、"活动详情"等
+        var activity_content="<%= act_desc %>";
+        var activity_key = "<%= act_key %>";
+        var quesions_num = parseInt(<%= quesions_num %>)
+        var options_tickets=[];
+        <%for (var i = 0; i < quesions_num; i++){%>
+            options_tickets.push([]);
+            <%for (var j = 0; j < options_num[i]; j++){ %>
+                options_tickets["<%=i%>"].push(parseInt("<%=options_tickets[i][j]%>"));
+            <%}%>
+        <%}%>
+
+//        var questions = <%= questions %>
+//        var options_num = <%= options_num %>
+//        var options_min = <%= options_min %>
+//        var options_max = <%= options_max %>
+//        var options = <%= options %>
+//        var options_tickets = <%= options_tickets %>
+        var vote_status = <%= vote_status %>
+        var is_vote = <%= is_vote %>
+
+        function showResult(){
+            $('#result_all_questions').empty();
+            $('#vote_all_questions').hide();
+            $('#votenow').hide();
+            $('#result_all_questions').show();
+            <%for (var i = 0; i < quesions_num; i++){%>
+                $('#result_all_questions').append('<div class="result_one_question">');
+                $('#result_all_questions').append('<div class="vote_qustion_desc">' +"问题" + "<%=(i + 1)%>:" + "<%=questions[i]%>" + '</div>');
+                var sum = 0;
+                <%for (var j = 0; j < options_num[i]; j++){%>
+                    sum += options_tickets["<%=i%>"]["<%=j%>"];
+                <%}%>
+                <%for (var j = 0; j < options_num[i]; j++){ %>
+                    var p = options_tickets["<%=i%>"]["<%=j%>"];
+                    $('#result_all_questions').append('<div class=vote_options>' + "<%=options[i][j]%>"+'</div>');
+                    $('#result_all_questions').append('<div class="ProgressBar"> <div style="width: ' + parseInt(p/sum*100)+'%;"><span>' + p +'</span></div></div>');
+                <%}%>
+            <%}%>
+        }
+
+        function showVote(){
+            $('#vote_all_questions').empty();
+            $('#vote_all_questions').show();
+            $('#votenow').show();
+            $('#result_all_questions').hide();
+            <%for (var i = 0; i < quesions_num; i++){%>
+                $('#vote_all_questions').append('<div class="vote_one_question">');
+                $('#vote_all_questions').append('<div class="vote_qustion_desc">' +"问题" + "<%=(i + 1)%>:" + "<%=questions[i]%>" + '</div>');
+                if ("<%=options_max[i]%>" == 1){
+                    <%for (var j = 0; j < options_num[i]; j++){ %>
+                        $('#vote_all_questions').append('<div><lable> <input name="question'+ '<%=i%>"' + ' type = "radio" value="'+'<%=j%>' +'">' + "<%=options[i][j]%>" + '</label></div>');
+                    <%}%>
+                }
+                else {
+                    <%for (var j = 0; j < options_num[i]; j++){ %>
+                        $('#vote_all_questions').append('<div><lable> <input name="question'+ '<%=i%>"' + ' type = "checkbox" value="'+ '<%=j%>'+ '">' + "<%=options[i][j]%>" + '</label></div>');
+                <%}%>
+                }
+                $('#vote_all_questions').append('</div>');
+            <%}%>
+        }
+
+        function getString( objarr ){
+            var typeNO = objarr.length;
+            var tree = "[";
+            for (var i = 0 ;i < typeNO ; i++){
+                tree += "[";
+                for (var j = 0; j < objarr[i].length; j++) {
+                    tree += objarr[i][j];
+                    if (j < objarr[i].length - 1)
+                        tree += ',';
+                }
+                tree += "]";
+                if(i<typeNO-1){
+                    tree+=",";
+                }
+            }
+            tree+="]";
+            return tree;
+        }
+
+        $('#vote_activity_title').text("投票——"+activity_title);
+        $('#vote_acitivity_content').text(activity_content);
+        if (vote_status == 1 || is_vote==1){
+            showResult();
+        }
+        else{
+            showVote();
+        }
+
+        function response(data){
+            if (data.message == "success"){
+                $("#error_msg").hide();
+                for (var i = 0; i < vote_select.length; i++){
+                    for (var j = 0; j < vote_select[i].length; j++){
+                        options_tickets[i][vote_select[i][j]]++;
+                    }
+                }
+                showResult();
+            }
+            else{
+                $("#error_msg").show();
+            }
+        }
+
+        function beforeSubmit(){
+            <%for (var i = 0; i < quesions_num; i++){%>
+                if ("<%=options_max[i]%>" == 1) {
+                    var list = $('input:radio[name="question' + '<%=i%>"]:checked').val();
+                    if (list == null) {
+                        vote_select.push([]);
+                    }
+                    else{
+                        vote_select.push([parseInt(list)]);
+                    }
+                }
+                else{
+                    var list= $('input:checkbox[name="question' + '<%=i%>"]:checked');
+                    vote_select.push([]);
+                    for (var j = 0; j < list.length; j++)
+                        vote_select[parseInt('<%=i%>')].push(parseInt(list[j].value));
+                }
+                data.data={'select':getString(vote_select)}
+            <%}%>
+        }
+        $('#vote_submit_form').submit(function() {
+            $('#votenow').prop('disabled', true);
+            data = {
+                dataType: 'json',
+                success: response,
+                error: function(){},
+                complete: function(){
+                    $('#votenow').prop('disabled', false);
+                }
+            }
+            beforeSubmit();
+            $(this).ajaxSubmit(data);
+            return false;
+        });
+    </script>
+</body>
+</html>
+
